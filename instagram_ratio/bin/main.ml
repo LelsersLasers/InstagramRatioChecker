@@ -32,6 +32,14 @@ let read_file filename =
   with
   | Sys_error _ -> None
 
+let handle_file filename =
+  match read_file filename with
+  | Some lines -> lines
+  | None ->
+      prerr_endline ("Error: Could not read file: " ^ filename);
+      prerr_endline usage_msg;
+      exit 1
+
 
 let () =
   Arg.parse speclist (fun _ -> ()) usage_msg;
@@ -39,29 +47,11 @@ let () =
   (* Ensure both required arguments are provided *)
   match !following_file, !by_file with
   | Some f, Some b ->
-      let following = read_file f in
-      let by = read_file b in
-      (match following, by with
-      | Some f, Some b ->
-          Printf.printf "Following: %s\n" (String.concat ", " f);
-          Printf.printf "By: %s\n" (String.concat ", " b)
-      | None, _ ->
-          prerr_endline ("Error: Could not read file: " ^ f);
-          prerr_endline usage_msg;
-          exit 1
-      | _, None ->
-          prerr_endline ("Error: Could not read file: " ^ b);
-          prerr_endline usage_msg;
-          exit 1)
-  | Some _, None ->
-      prerr_endline "Error: --by (-b) argument is required.";
-      prerr_endline usage_msg;
-      exit 1
-  | None, Some _ ->
-      prerr_endline "Error: --following (-f) argument is required.";
-      prerr_endline usage_msg;
-      exit 1
-  | None, None ->
+      let following = handle_file f in
+      let by = handle_file b in
+      Printf.printf "Following: %s\n" (String.concat ", " following);
+      Printf.printf "By: %s\n" (String.concat ", " by)
+  | _ ->
       prerr_endline "Error: Both --following (-f) and --by (-b) are required.";
       prerr_endline usage_msg;
       exit 1
