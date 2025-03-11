@@ -1,0 +1,4 @@
+(executable
+ (public_name instagram_ratio)
+ (name main)
+ (libraries instagram_ratio))
