@@ -86,11 +86,9 @@ let check_invalid_batch list =
       exit 1
   | _ -> ()
 
-let following_not_by following by =
-  List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) by |> Option.is_some)) following
-
-let by_not_following following by =
-  List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) following |> Option.is_some)) by
+let list_sub a b =
+  List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) b |> Option.is_some)) a
+  
 
 let second x = List.hd (List.tl x)
 
@@ -115,9 +113,9 @@ let () =
       
       check_invalid_batch following;
       check_invalid_batch by;
-      
-      let following_not_by = following_not_by following by in
-      let by_not_following = by_not_following following by in
+
+      let following_not_by = list_sub following by in
+      let by_not_following = list_sub by following in
       
       let following_not_by_str = List.map (fun x -> second x ^ " (" ^ List.hd x ^ ")") following_not_by in
       let by_not_following_str = List.map (fun x -> second x ^ " (" ^ List.hd x ^ ")") by_not_following in
