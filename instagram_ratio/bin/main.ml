@@ -1,10 +1,8 @@
 let usage_msg = "Usage: ./instagram_ratio --following <file1.txt> --by <file2.txt>"
 
-(* Store command line arguments *)
 let following_file = ref None
 let by_file = ref None
 
-(* Save to the appropriate reference *)
 let set_following filename = following_file := Some filename
 let set_by filename = by_file := Some filename
 
@@ -17,7 +15,6 @@ let speclist = [
 ]
 
 
-(* Read a file into a list of usernames and display names match input_line ic with *)
 let read_file filename =
   try
     let ic = open_in filename in
@@ -86,9 +83,9 @@ let check_invalid_batch list =
       exit 1
   | _ -> ()
 
+
 let list_sub a b =
   List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) b |> Option.is_some)) a
-  
 
 let second x = List.hd (List.tl x)
 
