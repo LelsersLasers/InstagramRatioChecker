@@ -85,14 +85,6 @@ let check_invalid_batch list =
       prerr_endline usage_msg;
       exit 1
   | _ -> ()
-  (* let invalid = odd || bad_username in
-  match invalid with
-  | true ->
-      prerr_endline "Error: Badly formatted file. (Likely contains users without display names.)";
-      prerr_endline usage_msg;
-      exit 1
-  | false -> () *)
-
 
 
 let () =
