@@ -14,6 +14,11 @@ let speclist = [
   ("-b", Arg.String set_by, "Same as --by");
 ]
 
+type user = {
+  username : string;
+  display_name : string;
+}
+
 
 let read_file filename =
   try
@@ -37,26 +42,15 @@ let handle_file filename =
       prerr_endline usage_msg;
       exit 1
 
-let batch_list list batch_size =
-  let rec take n list =
-    match (n, list) with
-    | (0, _) | (_, []) -> []
-    | (n, hd :: tl) -> hd :: take (n - 1) tl
-  in
-  let rec drop n list =
-    match (n, list) with
-    | (0, _) | (_, []) -> list
-    | (n, _ :: tl) -> drop (n - 1) tl
-  in
-  let rec batch_list' acc list batch_size =
-    match list with
+let parse_users lst =
+  let rec parse_users' acc lst =
+    match lst with
     | [] -> List.rev acc
-    | _ ->
-        let batch = take batch_size list in
-        let rest = drop batch_size list in
-        batch_list' (batch :: acc) rest batch_size
+    | username :: display_name :: tl -> parse_users' ({username; display_name} :: acc) tl
+    | username :: [] -> parse_users' ({username; display_name = "!"} :: acc) []
   in
-  batch_list' [] list batch_size
+  parse_users' [] lst
+
 
 let not_username str =
   let is_invalid_char c =
@@ -69,25 +63,18 @@ let not_username str =
   in
   String.exists is_invalid_char str
 
-let check_invalid_batch list =
-  let odd = List.exists (fun x -> List.length x <> 2) list in
-  let bad_username = List.find_opt (fun x -> not_username (List.hd x)) list in
-  match odd, bad_username with
-  | _, Some x ->
-      prerr_endline ("Error: Badly formatted file. (Likely contains users without display names.) Offending line is: " ^ (List.hd x));
-      prerr_endline usage_msg;
-      exit 1
-  | true, _ ->
-      prerr_endline "Error: Badly formatted file. (Likely contains users without display names.)";
+let check_valid_users list =
+  let bad_username = List.find_opt (fun x -> not_username (x.username)) list in
+  match bad_username with
+  | Some x ->
+      prerr_endline ("Error: Badly formatted file. (Likely contains users without display names.) Offending line is: " ^ (x.username));
       prerr_endline usage_msg;
       exit 1
   | _ -> ()
 
 
 let list_sub a b =
-  List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) b |> Option.is_some)) a
-
-let second x = List.hd (List.tl x)
+  List.filter (fun x -> not (List.find_opt (fun y -> x.username = y.username) b |> Option.is_some)) a
 
 
 
@@ -100,22 +87,25 @@ let () =
       let following_raw = handle_file f in
       let by_raw = handle_file b in
 
-      let following = batch_list following_raw 2 in
-      let by = batch_list by_raw 2 in
+      (* let following = batch_list following_raw 2 in
+      let by = batch_list by_raw 2 in *)
+
+      let following = parse_users following_raw in
+      let by = parse_users by_raw in
 
       (* let following_str = List.map (fun x -> "[" ^ (String.concat ", " x) ^ "]") following in
       let by_str = List.map (fun x -> "[" ^ (String.concat ", " x) ^ "]") by in
       Printf.printf "Following: %s\n" (String.concat "\n" following_str);
       Printf.printf "\nBy: %s\n" (String.concat "\n" by_str); *)
       
-      check_invalid_batch following;
-      check_invalid_batch by;
+      check_valid_users following;
+      check_valid_users by;
 
       let following_not_by = list_sub following by in
       let by_not_following = list_sub by following in
       
-      let following_not_by_str = List.map (fun x -> second x ^ " (" ^ List.hd x ^ ")") following_not_by in
-      let by_not_following_str = List.map (fun x -> second x ^ " (" ^ List.hd x ^ ")") by_not_following in
+      let following_not_by_str = List.map (fun x -> x.display_name ^ " (" ^ x.username ^ ")") following_not_by in
+      let by_not_following_str = List.map (fun x -> x.display_name ^ " (" ^ x.username ^ ")") by_not_following in
       
       Printf.printf "Following but not by: %s\n" (String.concat "\n" following_not_by_str);
       Printf.printf "\nBy but not following: %s\n" (String.concat "\n" by_not_following_str)
