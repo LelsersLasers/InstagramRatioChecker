@@ -86,6 +86,15 @@ let check_invalid_batch list =
       exit 1
   | _ -> ()
 
+let following_not_by following by =
+  List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) by |> Option.is_some)) following
+
+let by_not_following following by =
+  List.filter (fun x -> not (List.find_opt (fun y -> List.hd x = List.hd y) following |> Option.is_some)) by
+
+let second x = List.hd (List.tl x)
+
+
 
 let () =
   Arg.parse speclist (fun _ -> ()) usage_msg;
@@ -95,14 +104,26 @@ let () =
   | Some f, Some b ->
       let following_raw = handle_file f in
       let by_raw = handle_file b in
+
       let following = batch_list following_raw 2 in
       let by = batch_list by_raw 2 in
-      let following_str = List.map (fun x -> String.concat ", " x) following in
-      let by_str = List.map (fun x -> String.concat ", " x) by in
+
+      (* let following_str = List.map (fun x -> "[" ^ (String.concat ", " x) ^ "]") following in
+      let by_str = List.map (fun x -> "[" ^ (String.concat ", " x) ^ "]") by in
+      Printf.printf "Following: %s\n" (String.concat "\n" following_str);
+      Printf.printf "\nBy: %s\n" (String.concat "\n" by_str); *)
+      
       check_invalid_batch following;
       check_invalid_batch by;
-      Printf.printf "Following: %s\n" (String.concat "\n" following_str);
-      Printf.printf "By: %s\n" (String.concat "\n" by_str);
+      
+      let following_not_by = following_not_by following by in
+      let by_not_following = by_not_following following by in
+      
+      let following_not_by_str = List.map (fun x -> second x ^ " (" ^ List.hd x ^ ")") following_not_by in
+      let by_not_following_str = List.map (fun x -> second x ^ " (" ^ List.hd x ^ ")") by_not_following in
+      
+      Printf.printf "Following but not by: %s\n" (String.concat "\n" following_not_by_str);
+      Printf.printf "\nBy but not following: %s\n" (String.concat "\n" by_not_following_str)
   | _ ->
       prerr_endline "Error: Both --following (-f) and --by (-b) are required.";
       prerr_endline usage_msg;
