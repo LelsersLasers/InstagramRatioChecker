@@ -62,7 +62,6 @@ let batch_list list batch_size =
   batch_list' [] list batch_size
 
 let not_username str =
-  Printf.printf "Checking: %s\n" str;
   let is_invalid_char c =
     not (
       (c >= 'a' && c <= 'z') ||
@@ -75,15 +74,24 @@ let not_username str =
 
 let check_invalid_batch list =
   let odd = List.exists (fun x -> List.length x <> 2) list in
-  let bad_username = List.exists (fun x -> not_username (List.hd x)) list in
-  let invalid = odd || bad_username in
-  Printf.printf "Odd: %b\nBad Username: %b\nInvalid: %b\n" odd bad_username invalid;
+  let bad_username = List.find_opt (fun x -> not_username (List.hd x)) list in
+  match odd, bad_username with
+  | _, Some x ->
+      prerr_endline ("Error: Badly formatted file. (Likely contains users without display names.) Offending line is: " ^ (List.hd x));
+      prerr_endline usage_msg;
+      exit 1
+  | true, _ ->
+      prerr_endline "Error: Badly formatted file. (Likely contains users without display names.)";
+      prerr_endline usage_msg;
+      exit 1
+  | _ -> ()
+  (* let invalid = odd || bad_username in
   match invalid with
   | true ->
       prerr_endline "Error: Badly formatted file. (Likely contains users without display names.)";
       prerr_endline usage_msg;
       exit 1
-  | false -> ()
+  | false -> () *)
 
 
 
