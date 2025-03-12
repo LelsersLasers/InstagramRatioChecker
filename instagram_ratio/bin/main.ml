@@ -40,6 +40,52 @@ let handle_file filename =
       prerr_endline usage_msg;
       exit 1
 
+let batch_list list batch_size =
+  let rec take n list =
+    match (n, list) with
+    | (0, _) | (_, []) -> []
+    | (n, hd :: tl) -> hd :: take (n - 1) tl
+  in
+  let rec drop n list =
+    match (n, list) with
+    | (0, _) | (_, []) -> list
+    | (n, _ :: tl) -> drop (n - 1) tl
+  in
+  let rec batch_list' acc list batch_size =
+    match list with
+    | [] -> List.rev acc
+    | _ ->
+        let batch = take batch_size list in
+        let rest = drop batch_size list in
+        batch_list' (batch :: acc) rest batch_size
+  in
+  batch_list' [] list batch_size
+
+let contains_invalid_characters str =
+  Printf.printf "Checking: %s\n" str;
+  let is_invalid_char c =
+    not (
+      (c >= 'a' && c <= 'z') ||
+      (c >= '0' && c <= '9') ||
+      (c = '.') ||
+      (c = '_')
+    )
+  in
+  String.exists is_invalid_char str
+
+let check_invalid_batch list =
+  let odd = List.exists (fun x -> List.length x <> 2) list in
+  let bad_username = List.exists (fun x -> contains_invalid_characters (List.hd x)) list in
+  let invalid = odd || bad_username in
+  Printf.printf "Odd: %b\nBad Username: %b\nInvalid: %b\n" odd bad_username invalid;
+  match invalid with
+  | true ->
+      prerr_endline "Error: Badly formatted file. (Likely contains users without display names.)";
+      prerr_endline usage_msg;
+      exit 1
+  | false -> ()
+
+
 
 let () =
   Arg.parse speclist (fun _ -> ()) usage_msg;
@@ -47,10 +93,16 @@ let () =
   (* Ensure both required arguments are provided *)
   match !following_file, !by_file with
   | Some f, Some b ->
-      let following = handle_file f in
-      let by = handle_file b in
-      Printf.printf "Following: %s\n" (String.concat ", " following);
-      Printf.printf "By: %s\n" (String.concat ", " by)
+      let following_raw = handle_file f in
+      let by_raw = handle_file b in
+      let following = batch_list following_raw 2 in
+      let by = batch_list by_raw 2 in
+      let following_str = List.map (fun x -> String.concat ", " x) following in
+      let by_str = List.map (fun x -> String.concat ", " x) by in
+      check_invalid_batch following;
+      check_invalid_batch by;
+      Printf.printf "Following: %s\n" (String.concat "\n" following_str);
+      Printf.printf "By: %s\n" (String.concat "\n" by_str);
   | _ ->
       prerr_endline "Error: Both --following (-f) and --by (-b) are required.";
       prerr_endline usage_msg;
