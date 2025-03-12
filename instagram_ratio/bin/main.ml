@@ -61,7 +61,7 @@ let batch_list list batch_size =
   in
   batch_list' [] list batch_size
 
-let contains_invalid_characters str =
+let not_username str =
   Printf.printf "Checking: %s\n" str;
   let is_invalid_char c =
     not (
@@ -75,7 +75,7 @@ let contains_invalid_characters str =
 
 let check_invalid_batch list =
   let odd = List.exists (fun x -> List.length x <> 2) list in
-  let bad_username = List.exists (fun x -> contains_invalid_characters (List.hd x)) list in
+  let bad_username = List.exists (fun x -> not_username (List.hd x)) list in
   let invalid = odd || bad_username in
   Printf.printf "Odd: %b\nBad Username: %b\nInvalid: %b\n" odd bad_username invalid;
   match invalid with
