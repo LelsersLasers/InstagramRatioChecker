@@ -1,18 +1,3 @@
-let usage_msg = "Usage: ./instagram_ratio --following <file1.txt> --by <file2.txt>"
-
-let following_file = ref None
-let by_file = ref None
-
-let set_following filename = following_file := Some filename
-let set_by filename = by_file := Some filename
-
-let speclist = [
-  ("--following", Arg.String set_following, "Specify the first file");
-  ("-f", Arg.String set_following, "Same as --following");
-  ("--by", Arg.String set_by, "Specify the second file");
-  ("-b", Arg.String set_by, "Same as --by");
-]
-
 type user = {
   username : string;
   display_name : string;
@@ -46,7 +31,6 @@ let handle_file filename =
   | Some lines -> lines
   | None ->
       prerr_endline ("Error: Could not read file: " ^ filename);
-      prerr_endline usage_msg;
       exit 1
 
 let not_username str =
@@ -74,7 +58,6 @@ let parse_users lst =
             let new_acc = match acc with
               | [] ->
                 prerr_endline ("Error: Badly formatted file. Starts with a display name and not username.");
-                prerr_endline usage_msg;
                 exit 1
               | hd :: tl' ->
                   let new_hd = {u; marked} :: hd in
@@ -107,7 +90,6 @@ let parse_users lst =
             let new_eles = match len with
               | 1 -> 
                 prerr_endline ("Error: Badly formatted file. Two display names without a username. Offending line is: " ^ (List.hd hd).u);
-                prerr_endline usage_msg;
                 exit 1
               | n when n mod 2 = 0 ->
                 generate_users'' [] hd
@@ -134,6 +116,17 @@ let print_results txt lst =
 
 
 let () =
+	let usage_msg = "Usage: ./instagram_ratio --following <file1.txt> --by <file2.txt>" in
+	let following_file = ref None in
+	let by_file = ref None in
+	let set_following filename = following_file := Some filename in
+	let set_by filename = by_file := Some filename in
+	let speclist = [
+		("--following", Arg.String set_following, "Specify the first file");
+		("-f", Arg.String set_following, "Same as --following");
+		("--by", Arg.String set_by, "Specify the second file");
+		("-b", Arg.String set_by, "Same as --by");
+	] in
   Arg.parse speclist (fun _ -> ()) usage_msg;
 
   match !following_file, !by_file with
