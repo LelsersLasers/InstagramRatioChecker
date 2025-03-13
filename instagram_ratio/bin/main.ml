@@ -6,7 +6,6 @@ let by_file = ref None
 let set_following filename = following_file := Some filename
 let set_by filename = by_file := Some filename
 
-(* Argument specifications *)
 let speclist = [
   ("--following", Arg.String set_following, "Specify the first file");
   ("-f", Arg.String set_following, "Same as --following");
@@ -96,6 +95,14 @@ let parse_users lst =
       match lst with
         | [] -> acc
         | hd :: tl ->
+            let rec generate_users'' acc' lst' =
+              match lst' with
+              | [] -> List.rev acc'
+              | u1 :: u2 :: tl' ->
+                  let new_acc' = {username = u2.u; display_name = u1.u} :: acc' in
+                  generate_users'' new_acc' tl'
+              | _ -> exit 1 (* Unreachable *)
+            in
             let len = List.length hd in
             let new_eles = match len with
               | 1 -> 
@@ -103,34 +110,18 @@ let parse_users lst =
                 prerr_endline usage_msg;
                 exit 1
               | n when n mod 2 = 0 ->
-                let rec generate_users'' acc' lst' =
-                  match lst' with
-                  | [] -> List.rev acc'
-                  | u1 :: u2 :: tl' ->
-                      let new_acc' = {username = u2.u; display_name = u1.u} :: acc' in
-                      generate_users'' new_acc' tl'
-                  | _ -> exit 1 (* Unreachable *)
-                in
                 generate_users'' [] hd
               | _ ->
-                prerr_endline ("Error: Badly formatted file. Display name without a username. Offending line is: " ^ (List.hd hd).u);
-                prerr_endline usage_msg;
-                exit 1
+                let first = List.hd hd in (* Assume first element is the problem *)
+                let rest = List.tl hd in
+                let first_ele = {username = first.u; display_name = first.u} in
+                generate_users'' [first_ele] rest
             in
             generate_users' (acc @ new_eles) tl
     in
     generate_users' [] lst
   in
   lst |> mark_display_names |> batch_by_marked |> generate_users
-
-(* let check_valid_users list =
-  let bad_username = List.find_opt (fun x -> not_username (x.username)) list in
-  match bad_username with
-  | Some x ->
-      prerr_endline ("Error: Badly formatted file. (Likely contains users without display names.) Offending line is: " ^ (x.username));
-      prerr_endline usage_msg;
-      exit 1
-  | _ -> () *)
 
 
 let list_sub a b =
@@ -156,9 +147,6 @@ let () =
       Printf.printf "Following: %s\n%!" (String.concat "\n" following_str);
       Printf.printf "\nBy: %s\n" (String.concat "\n" by_str);
       
-      (* check_valid_users following;
-      check_valid_users by; *)
-
       let following_not_by = list_sub following by in
       let by_not_following = list_sub by following in
       
