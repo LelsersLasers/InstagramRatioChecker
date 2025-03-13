@@ -127,6 +127,10 @@ let parse_users lst =
 let list_sub a b =
   List.filter (fun x -> not (List.find_opt (fun y -> x.username = y.username) b |> Option.is_some)) a
 
+let print_results txt lst =
+  Printf.printf "%s: %d\n" txt (List.length lst);
+  List.iter (fun u -> Printf.printf "%s\n" (user_to_str u)) lst
+
 
 
 let () =
@@ -150,11 +154,8 @@ let () =
       let following_not_by = list_sub following by in
       let by_not_following = list_sub by following in
       
-      let following_not_by_str = List.map user_to_str following_not_by in
-      let by_not_following_str = List.map user_to_str by_not_following in
-      
-      Printf.printf "Following but not by: %s\n" (String.concat "\n" following_not_by_str);
-      Printf.printf "\nBy but not following: %s\n" (String.concat "\n" by_not_following_str)
+      print_results "Following but not by" following_not_by;
+      print_results "\nBy but not following" by_not_following;
   | _ ->
       prerr_endline "Error: Both --following (-f) and --by (-b) are required.";
       prerr_endline usage_msg;
