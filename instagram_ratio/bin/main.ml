@@ -19,6 +19,8 @@ type user = {
   display_name : string;
 }
 
+let user_to_str u = u.display_name ^ " (" ^ u.username ^ ")"
+
 
 let read_file filename =
   try
@@ -104,8 +106,8 @@ let () =
       let following_not_by = list_sub following by in
       let by_not_following = list_sub by following in
       
-      let following_not_by_str = List.map (fun x -> x.display_name ^ " (" ^ x.username ^ ")") following_not_by in
-      let by_not_following_str = List.map (fun x -> x.display_name ^ " (" ^ x.username ^ ")") by_not_following in
+      let following_not_by_str = List.map user_to_str following_not_by in
+      let by_not_following_str = List.map user_to_str by_not_following in
       
       Printf.printf "Following but not by: %s\n" (String.concat "\n" following_not_by_str);
       Printf.printf "\nBy but not following: %s\n" (String.concat "\n" by_not_following_str)
