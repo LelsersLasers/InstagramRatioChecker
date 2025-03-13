@@ -27,6 +27,7 @@ let read_file filename =
     let ic = open_in filename in
     let rec read_lines acc =
       match input_line ic with
+      | "·" -> read_lines acc
       | line -> read_lines (line :: acc)
       | exception End_of_file ->
           close_in ic;
