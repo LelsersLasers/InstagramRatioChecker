@@ -134,15 +134,8 @@ let () =
       let following_raw = handle_file f in
       let by_raw = handle_file b in
 
-      Printf.printf "HERE\n%!";
-
       let following = parse_users following_raw in
       let by = parse_users by_raw in
-
-      let following_str = List.map user_to_str following in
-      let by_str = List.map user_to_str by in
-      Printf.printf "Following: %s\n%!" (String.concat "\n" following_str);
-      Printf.printf "\nBy: %s\n" (String.concat "\n" by_str);
 
       let following_not_by = list_sub following by in
       let by_not_following = list_sub by following in
