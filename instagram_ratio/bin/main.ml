@@ -19,6 +19,11 @@ type user = {
   display_name : string;
 }
 
+type marked_user = {
+  u: string;
+  marked: bool;
+}
+
 let user_to_str u = u.display_name ^ " (" ^ u.username ^ ")"
 
 
@@ -45,16 +50,6 @@ let handle_file filename =
       prerr_endline usage_msg;
       exit 1
 
-let parse_users lst =
-  let rec parse_users' acc lst =
-    match lst with
-    | [] -> List.rev acc
-    | username :: display_name :: tl -> parse_users' ({username; display_name} :: acc) tl
-    | username :: [] -> parse_users' ({username; display_name = "!"} :: acc) []
-  in
-  parse_users' [] lst
-
-
 let not_username str =
   let is_invalid_char c =
     not (
@@ -66,14 +61,76 @@ let not_username str =
   in
   String.exists is_invalid_char str
 
-let check_valid_users list =
+let parse_users lst =
+  let mark_display_names lst =
+    List.map (fun u -> {u; marked = not_username u}) lst
+  in
+  let batch_by_marked lst =
+    let rec batch_by_marked' acc lst =
+      match lst with
+      | [] -> List.rev acc
+      | {u; marked} :: tl ->
+          match marked with
+          | true ->
+            let new_acc = match acc with
+              | [] ->
+                prerr_endline ("Error: Badly formatted file. Starts with a display name and not username.");
+                prerr_endline usage_msg;
+                exit 1
+              | hd :: tl' ->
+                  let new_hd = {u; marked} :: hd in
+                  [] :: (List.rev new_hd) :: tl'
+            in
+            batch_by_marked' new_acc tl
+          | false ->
+            match acc with
+            | [] -> exit 1 (* Unreachable? *)
+            | hd :: tl' ->
+                let new_hd = {u; marked} :: hd in
+                batch_by_marked' (new_hd :: tl') tl
+    in
+    batch_by_marked' [[]] lst
+  in
+  let generate_users lst =
+    let rec generate_users' acc lst =
+      match lst with
+        | [] -> acc
+        | hd :: tl ->
+            let len = List.length hd in
+            let new_eles = match len with
+              | 1 -> 
+                prerr_endline ("Error: Badly formatted file. Two display names without a username. Offending line is: " ^ (List.hd hd).u);
+                prerr_endline usage_msg;
+                exit 1
+              | n when n mod 2 = 0 ->
+                let rec generate_users'' acc' lst' =
+                  match lst' with
+                  | [] -> List.rev acc'
+                  | u1 :: u2 :: tl' ->
+                      let new_acc' = {username = u2.u; display_name = u1.u} :: acc' in
+                      generate_users'' new_acc' tl'
+                  | _ -> exit 1 (* Unreachable *)
+                in
+                generate_users'' [] hd
+              | _ ->
+                prerr_endline ("Error: Badly formatted file. Display name without a username. Offending line is: " ^ (List.hd hd).u);
+                prerr_endline usage_msg;
+                exit 1
+            in
+            generate_users' (acc @ new_eles) tl
+    in
+    generate_users' [] lst
+  in
+  lst |> mark_display_names |> batch_by_marked |> generate_users
+
+(* let check_valid_users list =
   let bad_username = List.find_opt (fun x -> not_username (x.username)) list in
   match bad_username with
   | Some x ->
       prerr_endline ("Error: Badly formatted file. (Likely contains users without display names.) Offending line is: " ^ (x.username));
       prerr_endline usage_msg;
       exit 1
-  | _ -> ()
+  | _ -> () *)
 
 
 let list_sub a b =
@@ -84,25 +141,23 @@ let list_sub a b =
 let () =
   Arg.parse speclist (fun _ -> ()) usage_msg;
 
-  (* Ensure both required arguments are provided *)
   match !following_file, !by_file with
   | Some f, Some b ->
       let following_raw = handle_file f in
       let by_raw = handle_file b in
 
-      (* let following = batch_list following_raw 2 in
-      let by = batch_list by_raw 2 in *)
+      Printf.printf "HERE\n%!";
 
       let following = parse_users following_raw in
       let by = parse_users by_raw in
 
-      (* let following_str = List.map (fun x -> "[" ^ (String.concat ", " x) ^ "]") following in
-      let by_str = List.map (fun x -> "[" ^ (String.concat ", " x) ^ "]") by in
-      Printf.printf "Following: %s\n" (String.concat "\n" following_str);
-      Printf.printf "\nBy: %s\n" (String.concat "\n" by_str); *)
+      let following_str = List.map user_to_str following in
+      let by_str = List.map user_to_str by in
+      Printf.printf "Following: %s\n%!" (String.concat "\n" following_str);
+      Printf.printf "\nBy: %s\n" (String.concat "\n" by_str);
       
-      check_valid_users following;
-      check_valid_users by;
+      (* check_valid_users following;
+      check_valid_users by; *)
 
       let following_not_by = list_sub following by in
       let by_not_following = list_sub by following in
